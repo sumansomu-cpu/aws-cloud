@@ -1,0 +1,30 @@
+sudo yum install -y lvm2
+ADD DISK and attach to ec2
+lsblk
+pvcreate /dev/nvme1n1
+pvs
+vgcreate myvg /dev/sdb
+vgs
+lvcreate -L +8g -n mylv myvg
+lvs
+mkfs.ext4 /dev/myvg/mylv
+blkid
+mkdir /app1
+mount -t ext4 /dev/myvg/mylv /app1
+df -hT
+ls -l /app1
+echo "hi welcome to lvm" > /app1/lvm.data
+ls -l /app1
+cat /app1/lvm.data
+now add new disk to extend lvm
+pvcreate /dev/nvme2n1
+vgextend myvg /dev/sdc
+lvextend -L +5G -n /dev/myvg/mylv -r
+umount /app1
+lvremove /dev/myvg/mylv
+vgremove myvg
+pvremove /dev/sdb
+pvremove /dev/sdc
+vi /etc/fstab
+/dev/myvg/mylv /app1 ext4 defaults 0  0
+
