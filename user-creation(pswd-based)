@@ -1,0 +1,9 @@
+useradd teju
+groupadd mysore
+grep mysore /etc/group
+id -a teju
+grep teju /etc/passwd
+passwd teju
+chmod 640 /etc/sudoers.d/90-cloud-init-users
+vi /etc/sudoers.d/90-cloud-init-users
+give teju entry and then login to ec2
