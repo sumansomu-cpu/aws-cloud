@@ -1,0 +1,17 @@
+useradd -u 1002
+groupadd devops
+useradd -u 1002 -g devops -c "admin user" -s /bin/bash -d /home/raju raju
+id -a raju
+grep raju /etc/passwd
+grep devops /etc/group
+mkdir /home/raju/.ssh
+touch /home/raju/.ssh/authorized_keys
+echo "paste users publickey" > touch /home/raju/.ssh/authorized_keys
+chmod 600 touch /home/raju/.ssh/authorized_keys
+chmod 700 /home/raju/.ssh
+chown raju:devops -R /home/raju/.ssh
+chmod 640 /etc/sudoers.d/90-cloud-init-users
+vi /etc/sudoers.d/90-cloud-init-users
+give user entry
+cat /etc/sudoers.d/90-cloud-init-users
+finally login to ec2 with user created 
