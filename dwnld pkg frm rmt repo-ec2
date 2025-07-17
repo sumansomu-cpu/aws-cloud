@@ -1,0 +1,12 @@
+vi /etc/yum.repos.d/jenkins.repo
+[jenkins]
+name = jenkins
+gpgcheck = 0
+baseurl = http://pkg.jenkins.io/redhat-stable
+cat /etc/yum.repos.d/jenkins.repo
+yum clean all
+yum repolist
+yum install jenkins
+
+
+in place of //pkg.jenkins.io/redhat-stable will have repo server details
