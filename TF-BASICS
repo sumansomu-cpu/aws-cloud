@@ -1,0 +1,162 @@
+vi providers.tf
+terraform {
+  required_providers {
+    aws = {
+      source = "hashicorp/aws"
+      version = "6.4.0"
+    }
+  }
+}
+
+provider "aws" {
+  # Configuration options
+}
+
+cat providers.tf
+-----------------------------------------------------------------------------------
+vi mykey.tf
+variable "key_name" {
+    default = "raj_key"
+  }
+resource "aws_key_pair" "deployer" {
+  key_name   = var.key_name
+  public_key = "..."
+
+
+cat mykey.tf
+
+terraform init
+terraform plan
+terraform apply 
+terraform destroy -auto-approve
+for passing value directly -> terraform apply -var "key_name=shann"
+for passing values from file which has many variables,1st create a file with variables @ variables.tfvars -> terraform apply -var-file variables.tfvars
+
+how variables.tvars looks like
+vi variables.tfvars
+key_name = "suman_key"
+
+cat variables.tfvars
+
+---------------------------------
+printing the output 
+
+variable "key_name" {
+    default = "raj_key"
+  }
+resource "aws_key_pair" "deployer" {
+  key_name   = var.key_name
+  public_key = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQD3F6tyPEFEzV0LX3X8BsXdMsQz1x2cEikKDEY0aIj41qgxMCP/iteneqXSIFZBp5vizPvaoIR3Um9xK7PGoW8giupGn+EPuxIA4cDM4vzOqOkiMPhz5XK0whEjkVzTo4+S0puvDZuwIsdiW9mxhJc7tgBNL0cYlWSYVkz4G/fslNfRPW5mYAM49f4fhtxPb5ok4Q2Lg9dPKVHO/Bgeu5woMc7RY0p1ej6D4CKFE6lymSDJpW0YHX/wqE9+cfEauh7xZcG0q9t2ta6F6fmX0agvpFyZo8aFbXeUBr7osSCJNgvavWbM/06niWrOvYX2xwWdhXmXSrbX8ZbabVohBK41 email@example.com"
+}
+output "key_name" {
+    value = aws_key_pair.deployer.key_name
+  }
+
+
+
+------- 
+DATA-TYPES
+
+vi datatyes.tf
+  variable "time" {
+        type = number
+        default = 5
+}
+output "time_is" {
+        value = var.time
+}
+variable "movie" {
+  type = string
+  default = "KGF"
+}
+output "movie_is" {
+    value = var.movie
+}
+variable "subjects" {
+  type = list
+  default = ["aws","azure","git","linux"]
+}
+output "subjects" {
+    value = "${var.subjects[1]}"
+  }
+variable "menu" {
+    type = map
+    default = {
+        "lunch" = ["z","y","z"],
+        "dinner" = ["w","r","f"]
+      }
+    }
+output "menu" {
+    value = "${var.menu.lunch[0]},${var.menu.dinner[2]}"
+  }
+
+
+
+cat datatypes.tf
+terraform plan
+terraform plan -var "time=6"
+terraform plan -var "movie=MILANA"
+terraform plan -var "subjects=[\"a\",\"b\",\"c\",\"d\"]"
+
+vi variables.tfvars
+time = 6
+movie = "milana"
+subjects = ["a","b","c","d"]
+menu = {
+  "lunch" = ["q","w","e"],
+  "dinner" = ["v","b","r"]
+}
+
+cat variables.tfvars
+terraform plan -var-file variables.tfvars
+terraform apply -var-file variables.tfvars -auto-approve
+
+
+
+----- ec2 creation 
+
+vi myec2.tf
+resource "aws_instance" "web" {
+  ami           = var.ami_id
+  instance_type = var.instance_type
+  count = 2
+  key_name = var.key_name
+
+  tags = {
+    Name = var.name
+  }
+}
+
+
+vi variables.tf
+variable "ami_id" {}
+variable "instance_type" {}
+variable "key_name" {}
+variable "name" {}
+
+
+vi variables.tfvars
+ami_id = "ami-050fd9796aa387c0d"
+instance_type = "t2.micro"
+key_name = "new-key"
+name = "dev-server"
+
+terraform plan -var-file variables.tfvars
+terraform apply -var-file variables.tfvars
+
+
+**** now change the count into 2 and do below changes  -> Name = "${var.name}-${count.index+1}"
+resource "aws_instance" "web" {
+  ami           = var.ami_id
+  instance_type = var.instance_type
+  count = 3
+  key_name = var.key_name
+
+  tags = {
+    Name = "${var.name}-${count.index+1}"
+  }
+}
+
+
+
+
