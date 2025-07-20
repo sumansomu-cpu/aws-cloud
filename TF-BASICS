@@ -146,6 +146,7 @@ terraform apply -var-file variables.tfvars
 
 
 **** now change the count into 2 and do below changes  -> Name = "${var.name}-${count.index+1}"
+vi myec2.tf
 resource "aws_instance" "web" {
   ami           = var.ami_id
   instance_type = var.instance_type
