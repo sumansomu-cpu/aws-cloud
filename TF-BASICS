@@ -13,7 +13,7 @@ provider "aws" {
 }
 
 cat providers.tf
------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------------------------
 vi mykey.tf
 variable "key_name" {
     default = "raj_key"
@@ -38,7 +38,7 @@ key_name = "suman_key"
 
 cat variables.tfvars
 
----------------------------------
+------------------------------------------------------------------------------------------------------------------------------------------
 printing the output 
 
 variable "key_name" {
@@ -54,7 +54,7 @@ output "key_name" {
 
 
 
-------- 
+------------------------------------------------------------------------------------------------------------------------------------------
 DATA-TYPES
 
 vi datatyes.tf
@@ -143,8 +143,10 @@ name = "dev-server"
 
 terraform plan -var-file variables.tfvars
 terraform apply -var-file variables.tfvars
+terraform destroy -var-file variables.tfavrs -auto-approve
 
-
+----------------------------------------------------------------------------------------------------------------------------------------
+**** server with same name but should have index values (count.index+1) *****************************************************************
 **** now change the count into 2 and do below changes  -> Name = "${var.name}-${count.index+1}"
 vi myec2.tf
 resource "aws_instance" "web" {
@@ -157,6 +159,87 @@ resource "aws_instance" "web" {
     Name = "${var.name}-${count.index+1}"
   }
 }
+
+
+------------------------------------------------------------------------------------------------------------------------------------------
+**** server with diff name -> use list ***********
+
+vi myec2.tf
+resource "aws_instance" "server" {
+  ami           = var.ami
+  instance_type = var.instance_type
+  count = 2
+  key_name = var.key_name
+  tags = {
+    Name = element (var.name,count.index)
+  }
+}
+
+vi variables.tf
+variable "ami" {}
+variable "instance_type" {}
+variable "key_name" {}
+variable "name" {
+  type = list
+}
+
+
+vi variables.tfvars
+ami = "ami-0e0dab2e7d3136219"
+instance_type = "t2.micro"
+key_name = "new-key"
+name = ["soma-server","manj-server"]
+
+terraform plan -var-file  variables.tfvars
+terraform apply -var-file  variables.tfvars
+terafrom destroy -var-file variables.tfvars
+
+
+
+------------------------------------------------------------------------------------------------------------------------------------------
+************* custom needs for each and every server -> using map data-type *******************************
+
+
+vi myec2.tf
+resource "aws_instance" "server" {
+  for_each = var.server_info
+  ami           = each.value.ami
+  instance_type = each.value.instance_type
+  key_name = var.key_name
+  tags = {
+    Name = each.value.name
+  }
+}
+
+
+vi variables.tf
+variable "key_name" {}
+variable "server_info" {
+  type = map
+}
+
+
+vi variables.tfvars
+key_name = "new-key"
+server_info = {
+        "server1" = {
+        "ami" = "ami-0e0dab2e7d3136219"
+        "instance_type" = "t2.micro"
+        "name" = "dubai-01"
+},
+        "server2" = {
+        "ami" = "ami-0e0dab2e7d3136219"
+        "instance_type" = "t2.large"
+        "name" = "mumbai-03"
+}
+}
+
+
+terraform plan -var-file variables.tfavrs
+terraform apply -var-file variables.tfavrs -auto-approve
+terraform destroy -var-file variables.tfavrs -auto-approve
+
+
 
 
 
