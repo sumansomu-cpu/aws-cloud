@@ -96,7 +96,8 @@ server_name = "puma-prod-01"
 
 
 terraform plan -var-file variables.tfavrs
-terraform apply -var-file variables.tfvars
+terraform apply -var-file variables.tfvars -auto-approve
+terraform destroy -var-file variables.tfvars -auto-approve
 
 
 
