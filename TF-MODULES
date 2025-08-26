@@ -1,0 +1,230 @@
+mkdir /root/modules
+mkdir /root/modules/s3
+mkdir /root/modules/vpc
+mkdir /root/modules/ec2
+yum install tree -y
+tree /root/modules
+touch /root/modules/s3/{providers.tf,main.tf,vars.tf,vars.tfvars}
+touch /root/modules/vpc/{providers.tf,main.tf,vars.tf,vars.tfvars}
+touch /root/modules/ec2/{providers.tf,main.tf,vars.tf,vars.tfvars}
+tree /root/modules
+
+#--- pasting code under s3 modules
+vi /root/modules/s3/providers.tf
+terraform {
+  required_providers {
+    aws = {
+      source = "hashicorp/aws"
+      version = "6.9.0"
+    }
+  }
+}
+
+provider "aws" {
+  # Configuration options
+}
+
+
+vi /root/modules/s3/main.tf
+resource "aws_s3_bucket" "mys3" {
+  bucket = var.s3_name
+
+  tags = {
+    Name        = var.s3_name
+  }
+}
+
+
+vi /root/modules/s3/vars.tf
+variable "s3_name" {}
+
+vi /root/modules/s3/vars.tfvars
+s3_name = "dvs-buk-9"
+
+
+#--- pasting code at vpc module
+
+vi /root/modules/vpc/providers.tf
+terraform {
+  required_providers {
+    aws = {
+      source = "hashicorp/aws"
+      version = "6.9.0"
+    }
+  }
+}
+
+provider "aws" {
+  # Configuration options
+}
+
+
+vi /root/modules/vpc/main.tf
+resource "aws_vpc" "myvpc" {
+  cidr_block       = var.cidr_block
+  tags = {
+    Name = var.vpc_name
+  }
+}
+resource "aws_internet_gateway" "myigw" {
+  vpc_id = aws_vpc.myvpc.id
+  tags = {
+    Name = "${var.vpc_name}-IGW"
+  }
+}
+resource "aws_route_table" "my-route" {
+  vpc_id = aws_vpc.myvpc.id
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.myigw.id
+  }
+tags = {
+    Name = "${var.vpc_name}-ROUTE"
+  }
+}
+resource "aws_subnet" "mysub" {
+  vpc_id     = aws_vpc.myvpc.id
+  cidr_block = var.sub_cidr
+  tags = {
+    Name = "${var.vpc_name}-SUB"
+  }
+}
+resource "aws_route_table_association" "sub-to-rt" {
+  subnet_id      = aws_subnet.mysub.id
+  route_table_id = aws_route_table.my-route.id
+}
+
+
+vi /root/modules/vpc/vars.tf
+variable "cidr_block" {}
+variable "vpc_name" {}
+variable "sub_cidr" {}
+
+vi /root/modules/vpc/vars.tfvars
+cidr_block = "192.168.0.0/16"
+vpc_name = "dvs-vpc"
+sub_cidr = "192.168.10.0/24"
+
+
+#--- pasting code for ec2 module
+
+vi /root/modules/ec2/providers.tf
+terraform {
+  required_providers {
+    aws = {
+      source = "hashicorp/aws"
+      version = "6.9.0"
+    }
+  }
+}
+
+provider "aws" {
+  # Configuration options
+}
+
+
+vi /root/modules/ec2/main.tf
+resource "aws_instance" "myec2" {
+  ami           = var.ami
+  instance_type = var.instance_type
+  key_name = var.key_name
+  associate_public_ip_address = "true"
+  subnet_id = var.subnet_id
+  tags = {
+    Name = var.server_name
+  }
+}
+
+
+vi /root/modules/ec2/vars.tf
+variable "key_name" {}
+variable "ami" {}
+variable "server_name" {}
+variable "instance_type" {}
+variable "subnet_id" {}
+
+vi /root/modules/ec2/vars.tfvars
+ami = "ami-0e1989e836322f58b"
+key_name = "new-key"
+instance_type = "t2.micro"
+server_name = "dvs-prod-01"
+subnet_id = "xxxx"
+
+
+#--- creating app-infra folder
+
+mkdir /root/myapp-infra
+cd /root/myapp-infra
+mkdir app3
+cd app3
+touch {providers.tf,main.tf,values.tf,values.tfvars}
+vi providers.tf ---> give code
+vi main.tf
+module "my_s3" {
+        source = "/root/modules/s3"
+        s3_name = "md-bkt-09"
+}
+module "my_vpc" {
+        source = "/root/modules/vpc"
+        cidr_block = "192.168.0.0/16"
+        vpc_name = "md-vpc"
+        sub_cidr = "192.168.10.0/24"
+}
+
+
+--- now do terraform apply after it created, now add outputs section at vpc module 
+here the ec2 is dependent on vpc module so need to define outputs section
+
+vi /root/modules/vpc/outputs.tf
+output "subnet_id" {
+        value = aws_subnet.mysub.id
+}
+
+cat /root/modules/vpc/outputs.tf
+
+now again at app3 folder update main.tf 
+
+vi /root/modules/myapp-infra/app3/main.tf
+module "my_s3" {
+        source = "/root/modules/s3"
+        s3_name = "md-bkt-09"
+}
+module "my_vpc" {
+        source = "/root/modules/vpc"
+        cidr_block = "192.168.0.0/16"
+        vpc_name = "md-vpc"
+        sub_cidr = "192.168.10.0/24"
+}
+module "my_ec2" {
+    source = "/root/modules/ec2"
+    ami = "ami-0e1989e836322f58b"
+    key_name = "new-key"
+    instance_type = "t2.micro"
+    server_name = "md-ec2"
+    subnet_id = module.my_vpc.subnet_id
+}
+
+
+now since we did change in parent module code 
+do
+terraform init --reconfigure
+terraform apply 
+
+if any error resolve it
+
+here if want to create infra for 1 more app
+then copy main.tf do necessary mods with names and then create folder for app4 and paste and then apply
+
+
+
+
+
+
+
+
+
+
+
+
+
+
