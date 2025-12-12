@@ -16,12 +16,15 @@ touch {ansible.cfg,ansiblehosts}
 ls
 vi ansible.cfg
 [defaults]
-remote_user = "ec2-user"
+remote_user = ec2-user                        # dont use "ec2-user"
 inventory = /root/ansible/ansiblehosts
 private_key_file = /root/ansible/mykey.pem
-host_key_checking = false
+host_key_checking = False                     # f or F
 interpreter_python = auto_silent
-deprecation_warnings = False
+deprecation_warnings = False                  # f or F
+
+cat ansible.cfg
+
 
 
 vi /root/ansible/ansiblehosts
@@ -33,5 +36,42 @@ cat /root/ansible/ansiblehosts
 vi /root/ansible/mykey.pem
 paste pem key 
 chmod 600 /root/ansible/mykey.pem
+cat /root/ansible/mykey.pem
 
-ansible -m command -a uptime "uptime" all
+
+ansible -m command -a uptime "uptime" all 
+
+
+vi  myplay.yaml
+---
+- name: working with playbook
+  hosts: slave1
+  tasks:
+    - name: collect server ipadd
+      command: hostname -I
+    - name: copying the code
+      copy:
+        src: /tmp/mycode.sh
+        dest: /tmp/mycode.sh
+        mode: 0555
+    - name: working with shell module
+      shell: /tmp/mycode.sh
+      register: mycode_output
+#    - name: using debug module
+#      debug: msg="{{"mycode_output.stdout_lines[3]"}}"
+    - name: using set_fact
+      set_fact: outputis = "{{"mycode_output.stdout_lines[3]"}}"
+
+
+
+vi /tmp/mycode.sh
+#!/bin/bash
+for i in {1..10}
+do
+echo $i
+done
+
+
+
+
+
